@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Environment
+.env
+venv/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Uploads & temp files
+uploads/*
+!uploads/.gitkeep
+*.ela.png
+
+# OS
+.DS_Store
+Thumbs.db

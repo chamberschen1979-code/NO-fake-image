@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>图像防伪工具v1.0</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f6f8;color:#1e293b;min-height:100vh}
+.container{max-width:880px;margin:0 auto;padding:20px 16px}
+
+/* 首页 */
+.home-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:20px}
+.home-card{background:white;border-radius:12px;padding:28px 20px;text-align:center;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.06);transition:all .15s}
+.home-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.1);transform:translateY(-2px)}
+.home-card .icon{font-size:40px;margin-bottom:10px}
+.home-card h3{font-size:16px;font-weight:600;margin-bottom:4px}
+.home-card p{font-size:12px;color:#64748b}
+
+/* 导航 */
+.nav-bar{display:flex;align-items:center;gap:12px;padding:8px 0 16px}
+.nav-bar .back{background:none;border:none;color:#6366f1;cursor:pointer;font-size:13px;padding:4px 8px;border-radius:4px}
+.nav-bar .back:hover{background:#eef2ff}
+.nav-bar .title{font-size:16px;font-weight:600;flex:1}
+
+/* 卡片 */
+.card{background:white;border-radius:10px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+
+/* 上传区 */
+.drop-zone{border:2px dashed #cbd5e1;border-radius:8px;padding:36px 24px;text-align:center;cursor:pointer;transition:all .2s}
+.drop-zone:hover,.drop-zone.dragover{border-color:#6366f1;background:#eef2ff}
+.drop-zone-icon{font-size:36px;margin-bottom:6px}
+.drop-zone-text{font-size:13px;color:#64748b}
+.drop-zone-text strong{color:#6366f1}
+.drop-zone-hint{font-size:11px;color:#94a3b8;margin-top:4px}
+
+/* 状态条 */
+.status-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:#f8fafc;border-radius:6px;margin:12px 0;font-size:12px;color:#64748b}
+.status-bar .num{font-weight:600;color:#0f172a;margin:0 2px}
+
+/* 按钮 */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 20px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .12s}
+.btn-primary{background:#6366f1;color:white}
+.btn-primary:hover{background:#4f46e5}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-secondary{background:#e2e8f0;color:#475569}
+.btn-secondary:hover{background:#cbd5e1}
+.btn-sm{padding:4px 10px;font-size:11px;background:#e2e8f0;color:#475569;border-radius:4px;cursor:pointer;border:none}
+.btn-sm:hover{background:#cbd5e1}
+.btn-danger{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.btn-danger:hover{background:#fee2e2}
+.btn-upload{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+.btn-upload:hover{background:#dcfce7}
+
+/* 文件列表 */
+.file-list{margin-top:12px}
+.file-item{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#f8fafc;border-radius:6px;margin-top:6px;font-size:13px}
+.file-item .name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-item .size{color:#94a3b8;font-size:12px}
+
+/* 结果 */
+.result-box{padding:12px 16px;border-radius:6px;margin-top:12px;font-size:13px;line-height:1.7}
+.result-tampered{background:#fef2f2;border:1px solid #fecaca}
+.result-suspicious{background:#fffbeb;border:1px solid #fde68a}
+.result-normal{background:#f0fdf4;border:1px solid #bbf7d0}
+
+.score-display{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.score-number{font-size:42px;font-weight:700;line-height:1}
+.score-bar-outer{flex:1;height:10px;background:#e2e8f0;border-radius:5px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:5px;transition:width .5s}
+
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500}
+.bg-red{background:#fef2f2;color:#dc2626}
+.bg-amber{background:#fffbeb;color:#d97706}
+.bg-green{background:#f0fdf4;color:#16a34a}
+.bg-red2{background:#fef2f2;color:#b91c1c}
+.bg-amber2{background:#fffbeb;color:#b45309}
+
+.ela-thumb{max-width:80px;max-height:50px;border-radius:4px;border:1px solid #e2e8f0;cursor:pointer;transition:transform .15s}.ela-thumb:hover{transform:scale(3);z-index:10;position:relative}.ela-img{max-width:100%;max-height:300px;border-radius:6px;border:1px solid #e2e8f0;margin-top:8px;cursor:pointer;transition:opacity .15s}
+.ela-img:hover{opacity:.85}
+
+/* 表格 */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:8px 8px;border-bottom:2px solid #e2e8f0;color:#64748b;font-weight:500;white-space:nowrap;font-size:11px}
+td{padding:6px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+tr:hover td{background:#f8fafc}
+
+/* 批量上传按钮区 */
+.upload-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+
+/* 弹窗 */
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.4);z-index:100;display:flex;align-items:center;justify-content:center}
+.modal{background:white;border-radius:10px;padding:16px;max-width:90vw;max-height:90vh;overflow:auto}
+.modal img{max-width:80vw;max-height:80vh;border-radius:4px}
+
+/* 双图上传栅格 */
+.dual-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:600px){.dual-grid{grid-template-columns:1fr}}
+
+/* 通用 */
+.mt8{margin-top:8px}.mt12{margin-top:12px}.mb8{margin-bottom:8px}
+.flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grow{flex:1}
+.text-center{text-align:center}
+.text-muted{color:#94a3b8;font-size:11px}
+.auto-add-note{padding:6px 10px;background:#eef2ff;border-radius:4px;font-size:11px;color:#4338ca;margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="container" id="app">
+  <!-- 首页 -->
+  <div id="page-home">
+    <div class="text-center" style="padding:32px 0 8px">
+      <h1 style="font-size:22px;font-weight:600">图像防伪工具v1.0</h1>
+          </div>
+    <div class="home-grid">
+      <div class="home-card" onclick="showPage('tamper')">
+        <div class="icon">🔍</div>
+        <h3>图片篡改识别</h3>
+        <p>上传图片 → ELA检测 → 自动入库</p>
+      </div>
+      <div class="home-card" onclick="showPage('duplicate')">
+        <div class="icon">🔗</div>
+        <h3>图片查重检测</h3>
+        <p>两图对比 / 与问题库对比</p>
+      </div>
+      <div class="home-card" onclick="showPage('library')">
+        <div class="icon">📚</div>
+        <h3>问题图片库</h3>
+        <p>查看 / 批量上传 / 删除</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 图片篡改识别 -->
+  <div id="page-tamper" style="display:none">
+    <div class="nav-bar">
+      <button class="back" onclick="showPage('home')">← 返回首页</button>
+      <span class="title">图片篡改识别</span>
+    </div>
+    <div class="card">
+      <div class="drop-zone" onclick="document.getElementById('f-tamper').click()">
+        <div class="drop-zone-icon">📷</div>
+        <div class="drop-zone-text">拖入图片或 <strong>点击选择</strong></div>
+        <div class="drop-zone-hint">支持多选 · 批量检测 · 可疑或篡改自动入库</div>
+      </div>
+      <input type="file" id="f-tamper" accept="image/*" multiple style="display:none"
+             onchange="tamperUpload(this.files)">
+      <div id="tamper-file-list" class="file-list" style="display:none">
+        <div id="tamper-items"></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-primary" id="btn-tamper-run" onclick="runTamperBatch()">开始批量检测</button>
+          <button class="btn btn-sm" onclick="clearTamper()">清除</button>
+          <span id="tamper-count" style="font-size:12px;color:#94a3b8;align-self:center"></span>
+        </div>
+      </div>
+    </div>
+    <div id="r-tamper"></div>
+  </div>
+
+  <!-- 图片查重检测 -->
+  <div id="page-duplicate" style="display:none">
+    <div class="nav-bar">
+      <button class="back" onclick="showPage('home')">← 返回首页</button>
+      <span class="title">图片查重检测</span>
+    </div>
+
+    <!-- 模式选择 -->
+    <div class="card">
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <button class="btn btn-primary" id="mode-two" onclick="setDupMode('two')">两张图片对比</button>
+        <button class="btn btn-secondary" id="mode-lib" onclick="setDupMode('lib')">与问题库对比</button>
+      </div>
+
+      <!-- 两图对比 -->
+      <div id="dup-two">
+        <div class="dual-grid">
+          <div>
+            <div class="drop-zone" onclick="document.getElementById('f-dup-a').click()">
+              <div class="drop-zone-icon">🅰</div>
+              <div class="drop-zone-text">选择图片 A</div>
+            </div>
+            <input type="file" id="f-dup-a" accept="image/*" style="display:none"
+                   onchange="dupFileA(this.files)">
+            <div id="pre-dup-a" class="file-item" style="display:none;margin-top:6px">
+              <span>🅰</span><span class="name" id="n-dup-a"></span>
+            </div>
+          </div>
+          <div>
+            <div class="drop-zone" onclick="document.getElementById('f-dup-b').click()">
+              <div class="drop-zone-icon">🅱</div>
+              <div class="drop-zone-text">选择图片 B</div>
+            </div>
+            <input type="file" id="f-dup-b" accept="image/*" style="display:none"
+                   onchange="dupFileB(this.files)">
+            <div id="pre-dup-b" class="file-item" style="display:none;margin-top:6px">
+              <span>🅱</span><span class="name" id="n-dup-b"></span>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary mt12" onclick="runCompareTwo()" style="width:100%">开始对比</button>
+      </div>
+
+      <!-- 与库对比 -->
+      <div id="dup-lib" style="display:none">
+        <div class="drop-zone" onclick="document.getElementById('f-dup-lib').click()">
+          <div class="drop-zone-icon">📷</div>
+          <div class="drop-zone-text">选择图片 <strong>与问题库对比</strong></div>
+          <div class="drop-zone-hint">支持多选 · 批量比对</div>
+        </div>
+        <input type="file" id="f-dup-lib" accept="image/*" multiple style="display:none"
+               onchange="dupLibUpload(this.files)">
+        <div id="dup-lib-file-list" class="file-list" style="display:none">
+          <div id="dup-lib-items"></div>
+          <div style="display:flex;gap:8px;margin-top:12px">
+            <button class="btn btn-primary" id="btn-dup-lib" onclick="runCompareLibBatch()">开始批量比对</button>
+            <button class="btn btn-sm" onclick="clearDupLib()">清除</button>
+            <span id="dup-lib-count" style="font-size:12px;color:#94a3b8;align-self:center"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="r-duplicate"></div>
+  </div>
+
+  <!-- 问题图片库 -->
+  <div id="page-library" style="display:none">
+    <div class="nav-bar">
+      <button class="back" onclick="showPage('home')">← 返回首页</button>
+      <span class="title">问题图片库 <span id="lib-title-count" style="font-weight:400;color:#64748b;font-size:13px"></span></span>
+    </div>
+    <div class="card">
+      <div class="upload-bar">
+        <button class="btn btn-upload btn-sm" onclick="document.getElementById('f-lib-add').click()">+ 批量上传</button>
+        <input type="file" id="f-lib-add" accept="image/*" multiple style="display:none"
+               onchange="libBatchAdd(this.files)">
+        <span class="text-muted grow" id="lib-upload-status"></span>
+        <button class="btn btn-secondary btn-sm" onclick="loadLibrary()">刷新</button>
+      </div>
+      <div id="lib-loading" class="text-center text-muted" style="padding:24px">加载中...</div>
+      <div id="lib-table"></div>
+      <div id="lib-empty" class="text-center text-muted" style="padding:24px;display:none">问题库为空</div>
+    </div>
+  </div>
+</div>
+
+<!-- ELA弹窗 -->
+<div id="ela-modal" class="modal-overlay" style="display:none" onclick="closeModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <img id="ela-img-big" src="">
+  </div>
+</div>
+
+<script>
+// ── 页面路由 ──
+function showPage(name) {
+  try {
+    ['home','tamper','duplicate','library'].forEach(p => {
+      const el = document.getElementById('page-' + p);
+      if (el) el.style.display = p === name ? 'block' : 'none';
+    });
+    if (name === 'library') loadLibrary();
+  } catch(e) { console.error('showPage error:', e); }
+}
+
+// ── 图片篡改识别 (批量) ──
+let tamperFiles = [];
+
+function tamperUpload(files) {
+  for (const f of files) {
+    if (!tamperFiles.find(x => x.name===f.name && x.size===f.size)) {
+      tamperFiles.push(f);
+    }
+  }
+  renderTamperList();
+}
+
+function renderTamperList() {
+  const container = document.getElementById('tamper-items');
+  const list = document.getElementById('tamper-file-list');
+  const count = document.getElementById('tamper-count');
+  if (!tamperFiles.length) { list.style.display = 'none'; return; }
+  list.style.display = 'block';
+  container.innerHTML = tamperFiles.map((f,i) =>
+    '<div class="file-item"><span>📄</span><span class="name">'+f.name+'</span>' +
+    '<span class="size">'+(f.size/1024).toFixed(1)+' KB</span>' +
+    '<button class="btn-sm" onclick="removeTamper('+i+')">✕</button></div>'
+  ).join('');
+  count.textContent = '共 ' + tamperFiles.length + ' 个文件';
+}
+
+function removeTamper(idx) {
+  tamperFiles.splice(idx, 1);
+  if (!tamperFiles.length) {
+    document.getElementById('tamper-file-list').style.display = 'none';
+    document.getElementById('r-tamper').innerHTML = '';
+  } else { renderTamperList(); }
+}
+
+function clearTamper() {
+  tamperFiles = []; tamperResults = [];
+  document.getElementById('tamper-file-list').style.display = 'none';
+  document.getElementById('r-tamper').innerHTML = '';
+}
+
+async function runTamperBatch() {
+  if (!tamperFiles.length) return;
+  const btn = document.getElementById('btn-tamper-run');
+  btn.disabled = true; btn.textContent = '检测中...';
+  document.getElementById('r-tamper').innerHTML = '<div class="text-center text-muted" style="padding:16px"><span class="spinner"></span> 分析中...</div>';
+
+  const results = [];
+  for (let i = 0; i < tamperFiles.length; i++) {
+    const fd = new FormData(); fd.append('file', tamperFiles[i]);
+    try {
+      const resp = await fetch('/api/tamper-check', { method: 'POST', body: fd });
+      const r = await resp.json();
+      r._name = tamperFiles[i].name;
+      results.push(r);
+    } catch(e) {
+      results.push({_name: tamperFiles[i].name, error: e.message});
+    }
+  }
+  renderTamperBatch(results);
+  btn.disabled = false; btn.textContent = '开始批量检测';
+}
+
+function renderTamperBatch(results) {
+  const tampered = results.filter(r => r.verdict==='tampered').length;
+  const suspicious = results.filter(r => r.verdict==='suspicious').length;
+  const normal = results.filter(r => r.verdict==='normal').length;
+  const autoAdded = results.filter(r => r.auto_added).length;
+
+  let html = '<div class="status-bar" style="margin-top:0">' +
+    '<span>结果: 篡改 <span class="num" style="color:#dc2626">'+tampered+'</span>' +
+    ' 可疑 <span class="num" style="color:#d97706">'+suspicious+'</span>' +
+    ' 正常 <span class="num" style="color:#16a34a">'+normal+'</span>' +
+    ' | 自动入库 <span class="num" style="color:#4338ca">'+autoAdded+'</span> 条</span></div>';
+
+  html += '<table><thead><tr>' +
+    '<th>文件名</th><th>ELA评分</th><th>判定</th><th>置信度</th><th>ELA热力图</th><th>入库</th></tr></thead><tbody>';
+
+  for (const r of results) {
+    if (r.error) {
+      html += '<tr><td>'+r._name+'</td><td colspan="5" style="color:#dc2626">错误: '+r.error+'</td></tr>';
+      continue;
+    }
+    const s = r.tamper_score||0;
+    const sc = s>=40?'#dc2626':s>=10?'#d97706':'#16a34a';
+    const vText = {tampered:'篡改',suspicious:'可疑',normal:'正常'}[r.verdict]||'?';
+    const vCls = {tampered:'bg-red',suspicious:'bg-amber',normal:'bg-green'}[r.verdict]||'';
+    const cCls = {high:'bg-red2',medium:'bg-amber2'}[r.confidence]||'';
+    const cText = {high:'高', medium:'中', normal:'正常'}[r.confidence]||r.confidence;
+    const elaHtml = r.ela_url ? '<img src="'+r.ela_url+'" class="ela-thumb" data-url="'+r.ela_url+'" onclick="showEla(this.dataset.url)">' : '-';
+    const added = r.auto_added ? '<span style="font-size:11px;color:#4338ca">✅已入库</span>' : '-';
+    html += '<tr><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">'+escHtml(r._name)+'</td>' +
+      '<td style="font-weight:600;color:'+sc+'">'+s+'</td>' +
+      '<td><span class="badge '+vCls+'">'+vText+'</span></td>' +
+      '<td><span class="badge '+cCls+'">'+(cText||'-')+'</span></td>' +
+      '<td>'+elaHtml+'</td><td>'+added+'</td></tr>';
+  }
+  html += '</tbody></table>';
+
+  html += '<div class="text-muted" style="margin-top:8px;font-size:11px">' +
+    '评分: 0-9正常 10-24可疑 ≥25篡改 | 置信度(交叉验证): 高=ELA+边缘方向一致 中=仅ELA 正常=无异常' +
+    '</div>';
+
+  document.getElementById('r-tamper').innerHTML = html;
+}
+
+function renderTamper(r) {
+  const s = r.tamper_score || 0;
+  const v = r.verdict || 'normal';
+  const vText = {tampered:'篡改', suspicious:'可疑', normal:'正常'}[v] || v;
+  const vCls = {tampered:'result-tampered', suspicious:'result-suspicious', normal:'result-normal'}[v];
+  const cText = {high:'高', medium:'中', normal:'正常'}[r.confidence] || r.confidence;
+  const color = s >= 40 ? '#dc2626' : s >= 10 ? '#d97706' : '#16a34a';
+  const vBadge = {tampered:'bg-red', suspicious:'bg-amber', normal:'bg-green'}[v];
+  const cBadge = {high:'bg-red2', medium:'bg-amber2'}[r.confidence];
+
+  let html = '<div class="result-box ' + vCls + '">';
+
+  // 评分条
+  html += '<div class="score-display">' +
+    '<span class="score-number" style="color:'+color+'">'+s+'</span>' +
+    '<div class="score-bar-outer"><div class="score-bar-fill" style="width:'+s+'%;background:'+color+'"></div></div>' +
+    '</div>';
+
+  // Badges
+  html += '<div class="flex mb8">' +
+    '<span class="badge ' + vBadge + '">' + vText + '</span>' +
+    (r.confidence ? '<span class="badge ' + cBadge + '">置信度: ' + cText + '</span>' : '') +
+    '</div>';
+
+  // 热力图
+  if (r.ela_url) html += '<img src="'+r.ela_url+'" class="ela-img" data-url="'+r.ela_url+'" onclick="showEla(this.dataset.url)">';
+
+  // EXIF
+  if (r.exif && Object.keys(r.exif).length) {
+    html += '<div class="flex mt8" style="gap:4px;flex-wrap:wrap">';
+    for (const [k,v] of Object.entries(r.exif)) {
+      const n = {36867:'拍摄时间', xmp_create_date:'XMP时间戳', 271:'相机', 272:'型号'}[k] || k;
+      html += '<span style="font-size:11px;background:#f1f5f9;padding:2px 6px;border-radius:3px">' + n + ': ' + v + '</span>';
+    }
+    html += '</div>';
+  }
+
+  // 自动入库提示
+  if (r.auto_added) {
+    html += '<div class="auto-add-note">✅ 已自动入库: ' + r.auto_added.case_id + ' (' + r.auto_added.original_name + ')</div>';
+  }
+
+  html += '</div>';
+
+  // 分数标准说明
+  html += '<div class="text-muted" style="margin-top:8px">' +
+    '评分标准: 0-9 正常 · 10-24 可疑 · ≥25 篡改  |  ' +
+    '置信度: ≥40 高 · 10-39 中 · <10 正常' +
+    '</div>';
+
+  document.getElementById('r-tamper').innerHTML = html;
+}
+
+// ── 图片查重: 模式切换 ──
+function setDupMode(mode) {
+  document.getElementById('mode-two').className = 'btn ' + (mode==='two' ? 'btn-primary' : 'btn-secondary');
+  document.getElementById('mode-lib').className = 'btn ' + (mode==='lib' ? 'btn-primary' : 'btn-secondary');
+  document.getElementById('dup-two').style.display = mode==='two' ? 'block' : 'none';
+  document.getElementById('dup-lib').style.display = mode==='lib' ? 'block' : 'none';
+  document.getElementById('r-duplicate').innerHTML = '';
+}
+
+// ── 两图对比 ──
+let dupA = null, dupB = null;
+function dupFileA(f) { if(f.length){dupA=f[0]; document.getElementById('pre-dup-a').style.display='flex'; document.getElementById('n-dup-a').textContent=f[0].name;} }
+function dupFileB(f) { if(f.length){dupB=f[0]; document.getElementById('pre-dup-b').style.display='flex'; document.getElementById('n-dup-b').textContent=f[0].name;} }
+
+async function runCompareTwo() {
+  if (!dupA || !dupB) { alert('请先选择两张图片'); return; }
+  const el = document.getElementById('r-duplicate');
+  el.innerHTML = '<div class="text-center text-muted" style="padding:16px">对比中...</div>';
+  const fd = new FormData(); fd.append('file_a', dupA); fd.append('file_b', dupB);
+  try {
+    const resp = await fetch('/api/compare-two', { method: 'POST', body: fd });
+    const r = await resp.json();
+    renderCompareTwo(r);
+  } catch(e) { el.innerHTML = '<div class="result-box result-suspicious">请求失败: ' + e.message + '</div>'; }
+}
+
+function renderCompareTwo(r) {
+  const same = r.same_base;
+  const orb = r.orb || {};
+  const ratio = (orb.inlier_ratio || 0) * 100;
+  let html = '<div class="result-box ' + (same ? 'result-normal' : 'result-tampered') + '">';
+  html += '<div style="font-size:16px;font-weight:600;margin-bottom:8px">' +
+    (same ? '✅ 同一底板' : '❌ 不同底板') + '</div>';
+
+  // EXIF
+  const x1 = r.exif_match ? r.exif_detail : '';
+  html += '<div class="flex mb8"><span class="badge ' + (r.exif_match ? 'bg-green' : 'bg-red') + '">' +
+    'EXIF: ' + (r.exif_match ? '✅ 匹配 (' + x1 + ')' : '❌ 不匹配') + '</span></div>';
+
+  // ORB
+  html += '<div class="flex mb8"><span class="badge ' + (ratio > 2 ? 'bg-green' : 'bg-red') + '">' +
+    'ORB: 内点率 ' + ratio.toFixed(1) + '%' +
+    (ratio > 2 ? ' ✅' : ' ❌') + '</span></div>';
+
+  html += '<div style="font-size:12px;color:#64748b">判定标准: ORB 内点率 > 2% 或 EXIF 时间戳一致 → 同一底板</div>';
+  html += '</div>';
+
+  // EXIF详情
+  html += '<div class="card" style="padding:12px;font-size:12px"><div class="dual-grid">';
+  for (const prefix of ['a','b']) {
+    const exif = r['exif_'+prefix] || {};
+    html += '<div><div style="font-weight:500;margin-bottom:4px">图片 ' + prefix.toUpperCase() + '</div>';
+    const entries = Object.entries(exif);
+    if (entries.length) entries.forEach(([k,v]) => {
+      const n = {36867:'拍摄时间', xmp_create_date:'XMP时间戳', 271:'相机', 272:'型号'}[k]||k;
+      html += '<div style="color:#64748b">' + n + ': ' + v + '</div>';
+    });
+    else html += '<div style="color:#94a3b8">无 EXIF 数据</div>';
+    html += '</div>';
+  }
+  html += '</div></div>';
+  document.getElementById('r-duplicate').innerHTML = html;
+}
+
+// ── 与库对比 (批量) ──
+let dupLibFiles = [];
+function dupLibUpload(files) {
+  for (const f of files) {
+    if (!dupLibFiles.find(x => x.name===f.name && x.size===f.size)) dupLibFiles.push(f);
+  }
+  renderDupLibList();
+}
+function renderDupLibList() {
+  const container = document.getElementById('dup-lib-items');
+  const list = document.getElementById('dup-lib-file-list');
+  const count = document.getElementById('dup-lib-count');
+  if (!dupLibFiles.length) { list.style.display = 'none'; return; }
+  list.style.display = 'block';
+  container.innerHTML = dupLibFiles.map((f,i) =>
+    '<div class="file-item"><span>📄</span><span class="name">'+f.name+'</span>' +
+    '<span class="size">'+(f.size/1024).toFixed(1)+' KB</span>' +
+    '<button class="btn-sm" onclick="removeDupLib('+i+')">✕</button></div>'
+  ).join('');
+  count.textContent = '共 ' + dupLibFiles.length + ' 个文件';
+}
+function removeDupLib(idx) { dupLibFiles.splice(idx, 1); renderDupLibList(); }
+function clearDupLib() { dupLibFiles = []; document.getElementById('dup-lib-file-list').style.display = 'none'; document.getElementById('r-duplicate').innerHTML = ''; }
+
+async function runCompareLibBatch() {
+  if (!dupLibFiles.length) return;
+  document.getElementById('btn-dup-lib').disabled = true;
+  document.getElementById('r-duplicate').innerHTML = '<div class="text-center text-muted" style="padding:16px">对比中...</div>';
+
+  const results = [];
+  for (let i = 0; i < dupLibFiles.length; i++) {
+    const fd = new FormData(); fd.append('file', dupLibFiles[i]);
+    try {
+      const resp = await fetch('/api/compare-lib', { method: 'POST', body: fd });
+      const r = await resp.json();
+      r._name = dupLibFiles[i].name;
+      results.push(r);
+    } catch(e) {
+      results.push({_name: dupLibFiles[i].name, error: e.message});
+    }
+  }
+  renderCompareLibBatch(results);
+  document.getElementById('btn-dup-lib').disabled = false;
+}
+
+function renderCompareLib(r) {
+  if (r.error) { document.getElementById('r-duplicate').innerHTML = '<div class="result-box result-tampered">' + r.error + '</div>'; return; }
+  let html = '<div class="result-box ' + (r.matches.length ? 'result-normal' : 'result-tampered') + '">';
+
+  if (r.matches.length) {
+    html += '<div style="font-size:14px;font-weight:500;margin-bottom:6px">⚠️ 命中问题图片库!</div>';
+    for (const m of r.matches) {
+      html += '<div class="flex mb8">' +
+        '<span class="badge bg-red2">' + (m.case_id||'') + '</span>' +
+        '<span style="font-size:12px;color:#475569">' + (m.original_name||'') + '</span>' +
+        '<span class="text-muted">' + m.method + ' - ' + (m.detail||'') + '</span>' +
+        '</div>';
+    }
+  } else {
+    html += '<div style="font-size:14px;color:#64748b">❌ 未命中问题图片库</div>';
+  }
+
+  html += '<div class="text-muted mt8">问题库共 ' + (r.lib_count||0) + ' 条 | 查重标准: EXIF 时间戳一致 或 ORB 内点率 > 2%</div>';
+  html += '</div>';
+
+  // EXIF
+  if (r.exif && Object.keys(r.exif).length) {
+    html += '<div class="card" style="padding:12px;font-size:12px"><div style="font-weight:500;margin-bottom:4px">上传图片 EXIF</div>';
+    for (const [k,v] of Object.entries(r.exif)) {
+      const n = {36867:'拍摄时间', xmp_create_date:'XMP时间戳', 271:'相机', 272:'型号'}[k]||k;
+      html += '<div style="color:#64748b">' + n + ': ' + v + '</div>';
+    }
+    html += '</div>';
+  }
+
+  document.getElementById('r-duplicate').innerHTML = html;
+}
+
+function renderCompareLibBatch(results) {
+  const matched = results.filter(r => r.matches && r.matches.length).length;
+  const missed = results.filter(r => !r.matches || !r.matches.length).length;
+  let html = '<div class="status-bar" style="margin-top:0">' +
+    '<span>命中 <span class="num" style="color:#4338ca">'+matched+'</span> 未命中 <span class="num" style="color:#94a3b8">'+missed+'</span></span></div>';
+
+  html += '<table><thead><tr><th>文件名</th><th>匹配结果</th><th>匹配方式</th><th>详情</th></tr></thead><tbody>';
+  for (const r of results) {
+    if (r.error) { html += '<tr><td>'+escHtml(r._name)+'</td><td colspan="3" style="color:#dc2626">错误: '+r.error+'</td></tr>'; continue; }
+    const hit = r.matches && r.matches.length;
+    html += '<tr><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">'+escHtml(r._name)+'</td>';
+    if (hit) {
+      html += '<td><span class="badge bg-red2">✅ 命中('+r.matches.length+')</span></td>' +
+        '<td style="font-size:11px" colspan="2">'+
+        r.matches.map(function(m){
+          var label = escHtml(m.original_name);
+          var detail = m.detail || '';
+          var method = m.method || '';
+          return '<div style="margin:3px 0;padding:4px 6px;background:#f8fafc;border-radius:4px;font-size:11px">' +
+            '<span class="badge bg-red2" style="font-size:10px">'+method+'</span> ' +
+            '<span>'+label+'</span><br>' +
+            '<span style="color:#64748b;font-size:10px">'+escHtml(detail)+'</span></div>';
+        }).join('')+'</td>';
+    } else {
+      html += '<td><span class="badge" style="background:#f1f5f9;color:#94a3b8">❌ 未命中</span></td><td>-</td><td>-</td>';
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  html += '<div class="text-muted mt8" style="font-size:11px">问题库共 ' + ((results[0]&&results[0].lib_count)||'?') + ' 条 | 查重标准: EXIF + ORB</div>';
+  document.getElementById('r-duplicate').innerHTML = html;
+}
+
+// ── 问题图片库 ──
+async function loadLibrary() {
+  document.getElementById('lib-loading').style.display = 'block';
+  document.getElementById('lib-table').style.display = 'none';
+  document.getElementById('lib-empty').style.display = 'none';
+  try {
+    const resp = await fetch('/api/library');
+    const data = await resp.json();
+    const imgs = data.images || [];
+    document.getElementById('lib-title-count').textContent = '(' + imgs.length + ' 条)';
+    document.getElementById('lib-loading').style.display = 'none';
+    if (!imgs.length) { document.getElementById('lib-empty').style.display = 'block'; return; }
+    renderLibTable(imgs);
+  } catch(e) {
+    document.getElementById('lib-loading').textContent = '加载失败: ' + e.message;
+  }
+}
+
+function renderLibTable(imgs) {
+  const container = document.getElementById('lib-table');
+  container.style.display = 'block';
+  let html = '<table><thead><tr>' +
+    '<th>文件名</th><th>ELA评分</th><th>状态</th><th>入库时间</th><th>操作</th>' +
+    '</tr></thead><tbody>';
+  for (const img of imgs) {
+    const s = img.ela_score || 0;
+    const v = img.ela_result || '?';
+    const vText = {tampered:'篡改', suspicious:'可疑', normal:'正常', '篡改':'篡改', '可疑':'可疑', '正常':'正常'}[v] || v;
+    const vCls = {tampered:'bg-red', suspicious:'bg-amber', normal:'bg-green', '篡改':'bg-red', '可疑':'bg-amber', '正常':'bg-green'}[v] || '';
+    const added = img.added_at || '-';
+    html += '<tr>' +
+      '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis" title="' + escHtml(img.original_name||'') + '">' + escHtml(img.original_name||'') + '</td>' +
+      '<td style="font-weight:600;color:' + (s>=40?'#dc2626':s>=10?'#d97706':'#16a34a') + '">' + s + '</td>' +
+      '<td><span class="badge ' + vCls + '">' + vText + '</span></td>' +
+      '<td style="color:#64748b;font-size:11px">' + added + '</td>' +
+      '<td><button class="btn-sm btn-danger" onclick="deleteLib(\'' + escHtml(img.case_id||'') + '\',\'' + escHtml(img.original_name||'') + '\')">删除</button></td>' +
+      '</tr>';
+  }
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+async function deleteLib(caseId, name) {
+  if (!confirm('确定删除 ' + name + '?')) return;
+  try {
+    const resp = await fetch('/api/library/remove?case_id=' + encodeURIComponent(caseId) + '&original_name=' + encodeURIComponent(name), { method: 'DELETE' });
+    if (!resp.ok) { alert('删除失败'); return; }
+    loadLibrary();
+  } catch(e) { alert('删除失败: ' + e.message); }
+}
+
+async function libBatchAdd(files) {
+  if (!files.length) return;
+  document.getElementById('lib-upload-status').textContent = '上传中 (' + files.length + ' 张)...';
+  const fd = new FormData();
+  for (const f of files) fd.append('files', f);
+  try {
+    const resp = await fetch('/api/library/add', { method: 'POST', body: fd });
+    const r = await resp.json();
+    document.getElementById('lib-upload-status').textContent = '✅ 已入库 ' + (r.added||[]).length + ' 张';
+    loadLibrary();
+  } catch(e) {
+    document.getElementById('lib-upload-status').textContent = '❌ 上传失败: ' + e.message;
+  }
+}
+
+// ── 通用 ──
+function escHtml(s) {
+  if (!s) return '';
+  var d = document.createElement('div');
+  d.appendChild(document.createTextNode(s));
+  return d.innerHTML;
+}
+function showEla(url) { document.getElementById('ela-img-big').src=url; document.getElementById('ela-modal').style.display='flex'; }
+function closeModal() { document.getElementById('ela-modal').style.display='none'; }
+
+// Drag & drop
+document.querySelectorAll('.drop-zone').forEach(z => {
+  z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('dragover'); });
+  z.addEventListener('dragleave', () => z.classList.remove('dragover'));
+  z.addEventListener('drop', e => {
+    e.preventDefault(); z.classList.remove('dragover');
+    const inp = z.nextElementSibling;
+    if (inp && inp.type==='file') { inp.files = e.dataTransfer.files; inp.dispatchEvent(new Event('change')); }
+  });
+});
+</script>
+</body>
+</html>
