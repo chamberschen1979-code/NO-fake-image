@@ -196,7 +196,7 @@ def _edge_consistency(image, block_size=24):
 
     原理: 自然图像的边缘方向在局部连续变化，
     PS操作会在修改区域产生方向突变。
-    如果ELA异常区域也同时有边缘方向异常 → 窜改确认。
+    如果ELA异常区域也同时有边缘方向异常 → 篡改确认。
 
     Returns:
         dict: {"anomaly_ratio": float, "cluster_ratio": float,
